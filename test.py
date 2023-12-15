@@ -83,7 +83,7 @@ cur.close()
 con.close()
 
 
-time.sleep(600)
+time.sleep(os.environ.get("SF_TIMEOUT", "900"))
 print("set 4")
 con = get_con()
 cur = con.cursor()
