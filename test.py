@@ -1,11 +1,13 @@
 import os
 import snowflake.connector
 import logging
+import sys
 
 for logger_name in ['snowflake','botocore']:
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
-        ch = logging.FileHandler('/logs/python_connector.log')
+#        ch = logging.FileHandler('/logs/python_connector.log')
+        ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
         ch.setFormatter(logging.Formatter('%(asctime)s - %(threadName)s %(filename)s:%(lineno)d - %(funcName)s() - %(levelname)s - %(message)s'))
         logger.addHandler(ch)
