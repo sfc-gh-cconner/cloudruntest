@@ -8,4 +8,4 @@ RUN pip3.8 install "snowflake-connector-python==3.1.0" flask
 RUN echo "3"
 COPY . /
 RUN mkdir /logs
-CMD ["python3.8", "/test.py"]
+CMD ["/entrypoint.sh"]
