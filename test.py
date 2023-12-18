@@ -2,6 +2,7 @@ import os
 import snowflake.connector
 import logging
 import sys
+import time
 
 for logger_name in ['snowflake','botocore']:
         logger = logging.getLogger(logger_name)
@@ -27,6 +28,23 @@ def get_con():
     print("returning connection")
     return con
 
+def do_request(query_id, range_start, range_end, count):
+    print(f"set {count}")
+    con = get_con()
+    cur = con.cursor()
+    result1 = cur.execute(f"select * from table(result_scan('{query_id}')) where rownum between {range_start} and {range_end}")
+    result1 = result1.fetchall()
+    count = 1
+    for row in result:
+        if count < 5:
+            print(row)
+    
+        count = count + 1
+    
+    cur.close()
+    con.close()
+    
+
 if __name__ == '__main__':
     print("LETS GET STARTED")
     con = get_con()
@@ -39,69 +57,24 @@ if __name__ == '__main__':
     
     cur.close()
     con.close()
-    import time
     
-    print("set 1")
-    con = get_con()
-    cur = con.cursor()
-    result1 = cur.execute(f"select * from table(result_scan('{query_id}')) where rownum between 0 and 2000000")
-    result1 = result1.fetchall()
+    max_rows = 17950502
     count = 1
-    for row in result:
-        if count < 5:
-            print(row)
+    range_total = 2000000
+    total_rows = 0
+    range_start = 0
+    range_end = range_start + range_total
     
+    while total_rows <= max_rows:
+        if count == 4:
+            time.sleep(int(os.environ.get("SF_TIMEOUT", "900")))
+
+        do_request(query_id, range_start, range_end, count)
         count = count + 1
-    
-    cur.close()
-    con.close()
-    
-    print("set 2")
-    con = get_con()
-    cur = con.cursor()
-    result2 = cur.execute(f"select * from table(result_scan('{query_id}')) where rownum between 2000001 and 4000000")
-    result2 = result2.fetchall()
-    count = 1
-    for row in result:
-        if count < 5:
-            print(row)
-    
-        count = count + 1
-    
-    cur.close()
-    con.close()
-    
-    print("set 3")
-    con = get_con()
-    cur = con.cursor()
-    result3 = cur.execute(f"select * from table(result_scan('{query_id}')) where rownum between 4000001 and 6000000")
-    result3 = result3.fetchall()
-    count = 1
-    for row in result:
-        if count < 5:
-            print(row)
-    
-        count = count + 1
-    
-    cur.close()
-    con.close()
-    
-    
-    time.sleep(os.environ.get("SF_TIMEOUT", "900"))
-    print("set 4")
-    con = get_con()
-    cur = con.cursor()
-    result4 = cur.execute(f"select * from table(result_scan('{query_id}')) where rownum between 6000001 and 8000000")
-    result4 = result4.fetchall()
-    count = 1
-    for row in result:
-        if count < 5:
-            print(row)
-    
-        count = count + 1
-    
-    cur.close()
-    con.close()
+        range_start = range_end + 1
+        range_end = range_end + range_total
+        if range_end > max_rows:
+            range_end = max_rows
     
     print("DONE")
 
