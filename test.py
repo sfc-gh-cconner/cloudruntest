@@ -4,6 +4,12 @@ import logging
 import sys
 import time
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
+
 for logger_name in ['snowflake','botocore']:
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
@@ -14,7 +20,7 @@ for logger_name in ['snowflake','botocore']:
         logger.addHandler(ch)
 
 def get_con():
-    print("getting connection")
+    logger.info("getting connection")
     con = snowflake.connector.connect(
         user=os.getenv("SNOWFLAKE_USER"),
         password=os.getenv("SNOWFLAKE_PASSWORD"),
@@ -25,11 +31,11 @@ def get_con():
             'QUERY_TAG': 'chrispythontest',
         }
     )
-    print("returning connection")
+    logger.info("returning connection")
     return con
 
 def do_request(query_id, range_start, range_end, count):
-    print(f"set {count}")
+    logger.info(f"set {count}")
     con = get_con()
     cur = con.cursor()
     result1 = cur.execute(f"select * from table(result_scan('{query_id}')) where rownum between {range_start} and {range_end}")
@@ -37,7 +43,7 @@ def do_request(query_id, range_start, range_end, count):
     count = 1
     for row in result:
         if count < 5:
-            print(row)
+            logger.info(row)
     
         count = count + 1
     
@@ -46,14 +52,14 @@ def do_request(query_id, range_start, range_end, count):
     
 
 if __name__ == '__main__':
-    print("LETS GET STARTED")
+    logger.info("LETS GET STARTED")
     con = get_con()
     cur = con.cursor()
-    print("Running first query")
+    logger.info("Running first query")
     result = cur.execute("select c_custkey, c_name, c_address, c_nationkey, c_phone, c_acctbal, c_mktsegment, c_comment, row_number() over(order by c_custkey, c_name, c_address, c_nationkey, c_phone, c_acctbal, c_mktsegment, c_comment) as ROWNUM from snowflake_sample_data.tpch_sf100.customer")
-    print("First query done")
+    logger.info("First query done")
     query_id = cur.sfqid
-    print("Query ID:", query_id)
+    logger.info(f"Query ID: {str(query_id)}")
     
     cur.close()
     con.close()
@@ -61,13 +67,14 @@ if __name__ == '__main__':
     max_rows = 17950502
     count = 1
     range_total = 2000000
-    total_rows = 0
     range_start = 0
     range_end = range_start + range_total
     
-    while total_rows <= max_rows:
+    while range_start <= max_rows:
         if count == 4:
-            time.sleep(int(os.environ.get("SF_TIMEOUT", "900")))
+            sleep_time = os.environ.get("SF_TIMEOUT", "900")
+            logger.info(f"Sleeping {sleep_time} seconds")
+            time.sleep(int(sleep_time))
 
         do_request(query_id, range_start, range_end, count)
         count = count + 1
@@ -76,5 +83,5 @@ if __name__ == '__main__':
         if range_end > max_rows:
             range_end = max_rows
     
-    print("DONE")
+    logger.info("DONE")
 
